@@ -1,0 +1,29 @@
+#Susi Sulistiawanti
+#Homework Spark
+
+!pip install pyspark
+
+# Import library 
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+
+# untuk Inisiasi SparkSession
+spark = SparkSession.builder.appName("NYC FHV Tripdata ETL").getOrCreate()
+
+input_file_path = "/content/fhv_tripdata_2019-01.csv"
+
+# Read data dari file CSV dan buat dataframe
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .option("inferSchema", "true") \
+    .load(input_file_path)
+
+# Filter data dimana kolom PUlocationID dan DOlocationID tidak boleh kosong dan pickup_datetime mulai dari 1 Jan 2019 sampai 10 Jan 2019
+df_filtered = df.filter(col("PUlocationID").isNotNull() & col("DOlocationID").isNotNull() & (col("pickup_datetime") >= "2019-01-01") & (col("pickup_datetime") <= "2019-01-10"))
+
+output_file_path_parquet = "/content/output_fhv_tripdata.parquet"
+output_file_path_json = "/content/output_fhv_tripdata.json"
+
+# Simpan hasil transform ke dalam file Parquet dan JSON
+df_filtered.write.format("parquet").mode("overwrite").save(output_file_path_parquet)
+df_filtered.write.format("json").mode("overwrite").save(output_file_path_json)
